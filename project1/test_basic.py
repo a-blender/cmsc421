@@ -2,7 +2,6 @@
 
 """
 Project 1 public tests
-
 You can (and should) write additional tests!
 """
 

@@ -10,11 +10,6 @@ import heapq
 import math
 
 
-
-
-
-
-
 class PriorityQueue:
     	def __init__(self):
         	self.elements = []
@@ -29,16 +24,6 @@ class PriorityQueue:
         	return heapq.heappop(self.elements)[1]
 
 
-
-
-
-
-
-
-
-
-
-
 def parse_map(mapfile):
 	"""
 	Parse the mapfile
@@ -47,21 +32,8 @@ def parse_map(mapfile):
 	map = []
 	for line in open(mapfile, "r").readlines():
 		new_line = list(line[:-1])
-		print(new_line)
 		map.append(new_line)
 	return map
-
-
-
-
-
-def heuristic2(a, b):
-    	(x1, y1) = a
-    	(x2, y2) = b
-    	return abs(x1 - x2) + abs(y1 - y2)
-
-
-
 
 
 def heuristic(v1, v2):
@@ -70,6 +42,14 @@ def heuristic(v1, v2):
 	Finds the euclidean distance between two grid points
 	"""
 	return math.sqrt((v2[0]-v1[0])**2 + (v2[1]-v1[1])**2)
+
+
+def heuristic2(v1, v2):
+	"""
+	Heuristic for A* search
+	Finds the manhattan distance between two grid points
+	"""
+	return abs(v1[0] - v2[0]) + abs(v1[1] - v2[1])
 
 
 def neighbors(grid, v):
@@ -102,10 +82,6 @@ def get_cost(grid, v1, v2):
 		return 5
 	if (grid[row][col] == 'm'):
 		return 10
-
-
-def convert(path):
-	return 0
 		
 
 def a_star_search(grid, start, goal):
@@ -119,25 +95,20 @@ def a_star_search(grid, start, goal):
 
 	while not frontier.empty():
 		current = frontier.get()
+		# print("Current: ", current)
         	
 		if current == goal:
 			break
         
 		for next in neighbors(grid, current):
-			print("SHORTEST PATH")
-			print(shortest_path)
 			new_cost = cost[current] + get_cost(grid, current, next)
 			if next not in cost or new_cost < cost[next]:
 				cost[next] = new_cost
-				priority = new_cost + heuristic(next, goal)	
+				priority = new_cost + heuristic2(next, goal)	
+				# print("-> Frontier: ",next,priority)
 				frontier.put(next, priority)
 				shortest_path[next] = current
-
-	
 	return shortest_path
-
-
-
 
 
 def find_path(map_data, init_r, init_c, goal_r, goal_c):
@@ -147,26 +118,61 @@ def find_path(map_data, init_r, init_c, goal_r, goal_c):
 	"""
 	start = (init_r, init_c)
 	goal = (goal_r, goal_c)
-	return a_star_search(map_data, start, goal)
+	result = a_star_search(map_data, start, goal)
+	# print (result)
+	solution = convert(reconstruct(result, start, goal))
+	# print(solution)
+	return solution
+
+
+def reconstruct(path, start, goal):
+	new_path = []	
+	current = goal
+	while (current != None):
+		new_path.insert(0, current)
+		current = path[current]
+	# print(new_path)
+	return new_path
+
+
+def convert(path):
+	"""
+	Converts a list of tuples into "d/u/l/r" chars
+	Returns the new path as a list
+	"""
+	new_path = []
+	for x in range(len(path)-1):
+		row1 = path[x][0]
+		col1 = path[x][1]
+		row2 = path[x+1][0]
+		col2 = path[x+1][1]
+		if (row1 > row2):
+			new_path.append('u')
+		elif (row1 < row2):
+			new_path.append('d')
+		elif (col1 > col2):
+			new_path.append('l')
+		elif (col1 < col2):
+			new_path.append('r')	
+	return new_path
 
 
 def main(argv=None):
-    	"""Main function"""
-   
-    	# Read command line arguments
-    	mapfile = sys.argv[1]
-    	initial_row = int(sys.argv[2])
-    	initial_col = int(sys.argv[3])
-    	goal_row = int(sys.argv[4])
-    	goal_col = int(sys.argv[5])
+	"""Main function"""
 
-    	# Convert the mapfile into an appropriate data structure
-    	m = parse_map(mapfile)
+	# Read command line arguments
+	mapfile = sys.argv[1]
+	initial_row = int(sys.argv[2])
+	initial_col = int(sys.argv[3])
+	goal_row = int(sys.argv[4])
+	goal_col = int(sys.argv[5])
 
-    	# Find the lowest cost path
-    	solution = find_path(m, initial_row, initial_col, goal_row, goal_col)
+	# Convert the mapfile into an appropriate data structure
+	m = parse_map(mapfile)
 
-    	print(solution)
+	# Find the lowest cost path
+	solution = find_path(m, initial_row, initial_col, goal_row, goal_col)
+	print(solution)
 
 
 # Run as: $ ./p1.py mapfile.txt init_row init_col goal_row goal_col
