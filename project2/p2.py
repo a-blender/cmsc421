@@ -99,13 +99,13 @@ class GrudgeBot:
 		self.holding_grude = 0
 
 	def play(self, prev):
-	if prev == "D":
-		self.holding_grude = 1
+		if prev == "D":
+			self.holding_grude = 1
 
-	if self.holding_grude == 1:
-		return "D"
-	else:
-		return "C"
+		if self.holding_grude == 1:
+			return "D"
+		else:
+			return "C"
 
 	def reset(self):
 		self.holding_grudge = 0
@@ -119,7 +119,7 @@ class ForgivingBot:
 	def __init__(self):
 		self.patience = 0
 
-	def play(self, prev):	
+	def play(self, prev):
 		if prev == "D":
 			self.patience += 1
 
@@ -165,52 +165,58 @@ def play_ipd(bot1, bot2, rounds, noise=0.0):
 	# Instantiate both bots and utility vars
 	playBot1 = bot1()
 	playBot2 = bot2()
-	utilBot1 = 0, utilBot2 = 0
+	utilBot1 = 0
+	utilBot2 = 0
 	
 	# Get the first move from bot1
-	moveBot1 = get_move(bot1, None, noise)
+	moveBot1 = get_move(playBot1, None, noise)
 
 	# Play rounds for bot1 and bot2, adding rewards as you go
 	x = 0
-	currentBot = bot2
+	currentBot = playBot1
 	prev = moveBot1
 
 	while (x < rounds):
-	move = get_move(currentBot, prev, noise) 
+		move = get_move(currentBot, prev, noise)
+		print(move) 
 		utilBot1 += get_reward(prev, move)
-	utilBot2 += get_reward(move, prev)
-	bot = bot1
-	prev = move # clever!
+		utilBot2 += get_reward(move, prev)
+		if currentBot == playBot1:
+			currentBot = playBot2
+		else:
+			currentBot = playBot1
+		prev = move # clever!
+		x += 1
 		
 	return (utilBot1, utilBot2)
 
 
-def get_move(bot, prev, noise)
+def get_move(bot, prev, noise):
 
-	move = bot.play(noise)
+	move = bot.play(prev)
 
 	prob_flip = decimal.Decimal(random.randrange(0, 50))/100
-		if (prob_flip < noise):
- 		if move == "C":
-		return "D"
+	if prob_flip < noise:
+		if move == "C":
+			return "D"
 		else:
-		return "C"
+			return "C"
 	else:
 		return move
 
 
-def get_reward(move, prev)
+def get_reward(move, prev):
 
 	if prev == "C":
-	if move == "C":
-		return CC_REWARD
-	elif move == "D"
-		return DC_REWARD
-	else prev == "D":
-	if move == "C":
-		return CD_REWARD
-	elif move == "D"
-		return DD_REWARD
+		if move == "C":
+			return CC_REWARD
+		elif move == "D":
+			return DC_REWARD
+	elif prev == "D":
+		if move == "C":
+			return CD_REWARD
+		elif move == "D":
+			return DD_REWARD
 	 
 
 def play_tournament(bots, rounds, noise=0.0):
@@ -252,7 +258,7 @@ def main():
 				+ [DefectBot() for i in range(5)]
 				+ [TFTBot() for i in range(5)])
 
-	play_ipd(CooperateBot(), DefectBot())
+	print(play_ipd(ForgivingBot, GrudgeBot, 10, 0))
 
 
 def main2():
