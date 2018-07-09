@@ -6,6 +6,7 @@ import sys
 import random
 import collections
 import decimal
+import copy
 
 # Reward for mutual cooperation
 CC_REWARD = 3
@@ -149,8 +150,6 @@ def count_bots(bots):
 	return dict(collections.Counter([name_of_bot(b) for b in bots]))
 
 
-# TODO: implement play_ipd, play_tournament, evolutionary_ipd
-
 def play_ipd(bot1, bot2, rounds, noise=0.0):
 	"""
 	Play iterated prisoner's dilemma between bot1 and bot2
@@ -178,7 +177,7 @@ def play_ipd(bot1, bot2, rounds, noise=0.0):
 
 	while (x < rounds):
 		move = get_move(currentBot, prev, noise)
-		print(move) 
+		#print(move) 
 		utilBot1 += get_reward(prev, move)
 		utilBot2 += get_reward(move, prev)
 		if currentBot == playBot1:
@@ -232,7 +231,56 @@ def play_tournament(bots, rounds, noise=0.0):
 	and bot is the Bot object, e.g. 
 	[(10, <CooperateBot instance at 0x...), ...
 	"""
-	return []
+
+	# copy the list of bots into each array index
+	opponents = dict()
+	for bot in bots:
+		opponents[bot] = copy.deepcopy(bots)
+		opponents[bot].remove(bot)
+	
+	# run the round robin tournament
+	x = 0
+	while (x < rounds):
+		bots2 = copy.deepcopy(bots)
+		opponents2 = copy.deepcopy(opponents)
+		rewards = run_round(bots2, opponents2, rounds, noise)
+		x += 1
+	
+	# return the rewards in (utility, bot) format
+	return [(rewards[bot], bot) for bot in bots]
+
+
+def run_round(bots, opponents, rounds, noise):
+
+	# setup a reward hash table for the bots
+	rewards = dict()
+	for bot in bots:
+		rewards[bot] = 0
+	
+	while len(bots) != 0:
+		
+		#print("*******************************")
+		bot1 = bots[0]		
+		bot2 = random.choice(opponents[bot1])
+		opponents[bot2].remove(bot1)
+		opponents[bot1].remove(bot2)
+		
+		if len(opponents[bot1]) == 0:
+			del opponents[bot1]
+			bots.remove(bot1)
+
+		if len(opponents[bot2]) == 0:
+			del opponents[bot2]
+			bots.remove(bot2)
+		
+		(r1, r2) = play_ipd(bot1, bot2, rounds, noise)
+		rewards[bot1] += r1
+		rewards[bot2] += r2
+
+	results = copy.deepcopy(rewards)
+	#print("1")
+	#print(results)
+	return results
 
 
 def evolutionary_ipd(bots, rounds, generations, noise=0.0):
@@ -250,7 +298,20 @@ def evolutionary_ipd(bots, rounds, generations, noise=0.0):
 
 	Return the last generation (a list of bot objects)
 	"""
-	return []
+	x = 0
+	while (x < generations):
+		l = play_tournament(bots, rounds, noise)
+		list = sorted(l)[:-2 or None]
+		
+		if len(list) >= 2:
+			list.append(list[0])
+		elif len(list) >= 1:
+			list.append(list[1])
+
+		#print(list)
+		x += 1
+		
+	return list
 
 def main():
 
@@ -258,7 +319,11 @@ def main():
 				+ [DefectBot() for i in range(5)]
 				+ [TFTBot() for i in range(5)])
 
-	print(play_ipd(ForgivingBot, GrudgeBot, 10, 0))
+	#print(play_ipd(ForgivingBot, GrudgeBot, 10, 0.0))
+
+	list = [CooperateBot, ForgivingBot, GrudgeBot]
+	print(play_tournament(list, 5, 0.1))
+	#print(evolutionary_ipd(list, 5, 2, 0.0))
 
 
 def main2():
