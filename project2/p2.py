@@ -7,6 +7,7 @@ import random
 import collections
 import decimal
 import copy
+from operator import itemgetter
 
 # Reward for mutual cooperation
 CC_REWARD = 3
@@ -238,6 +239,7 @@ def play_tournament(bots, rounds, noise=0.0):
 		opponents[bot] = copy.deepcopy(bots)
 		opponents[bot].remove(bot)
 	
+	
 	# run the round robin tournament
 	x = 0
 	while (x < rounds):
@@ -300,20 +302,17 @@ def evolutionary_ipd(bots, rounds, generations, noise=0.0):
 	"""
 	x = 0
 	while (x < generations):
+
 		l = play_tournament(bots, rounds, noise)
-		list = sorted(l)[:-2 or None]
-		
-		if len(list) >= 2:
-			list.append(list[0])
-		elif len(list) >= 1:
-			list.append(list[1])
-
-		#print(list)
+		l2 = sorted(l, key=lambda x: x[0], reverse=True) 	
+		l2[-2] = (l2[0][0], l2[0][1])
+		l2[-1] = (l2[1][0], l2[1][1])
 		x += 1
-		
-	return list
 
-def main():
+	return l2
+
+
+def main2():
 
 	population = ([CooperateBot() for i in range(5)]
 				+ [DefectBot() for i in range(5)]
@@ -323,10 +322,10 @@ def main():
 
 	list = [CooperateBot, ForgivingBot, GrudgeBot]
 	print(play_tournament(list, 5, 0.1))
-	#print(evolutionary_ipd(list, 5, 2, 0.0))
+	print(evolutionary_ipd(list, 5, 2, 0.2))
 
 
-def main2():
+def main():
 	"""Example: play evolutionary IPD with different noise levels"""
 
 	# Initial population is 5 Cooperate, Defect and TFT Bots
@@ -338,10 +337,10 @@ def main2():
 	print(count_bots(evolutionary_ipd(population, 10, 20, 0.05)))
 
 	# Medium noise
-	print(count_bots(evolutionary_ipd(population, 10, 20, 0.1)))
+	#print(count_bots(evolutionary_ipd(population, 10, 20, 0.1)))
 
 	# High noise; favors DefectBot
-	print(count_bots(evolutionary_ipd(population, 10, 20, 0.25)))
+	#print(count_bots(evolutionary_ipd(population, 10, 20, 0.25)))
 
 
 if __name__ == "__main__":
