@@ -10,9 +10,22 @@ class NaiveBayes():
 	"""TODO: implement Naive Bayes"""
 
 	def __init__(self):
+		self.classProbs = []
 		self.demProbs = []
 		self.repProbs = []
 
+
+	def computeClassProbs(self, data):
+		dems = 0
+		reps = 0		
+		for line in data:
+			if line[0] == 'democrat':
+				dems += 1
+			else:
+				reps += 1
+		total = len(data)
+		return {'democrat':dems/total,'republican':reps/total} 
+	
 	
 	def splitDataset(self, dataset, splitRatio):
 		trainSize = int(len(dataset) * splitRatio)
@@ -55,7 +68,7 @@ class NaiveBayes():
 
 		attributes = [[sub[i] for sub in data] for i in range(16)]
 		return attributes	
-
+					
 
 	def computeProbabilities(self, data):
 		""" 
@@ -92,6 +105,10 @@ class NaiveBayes():
 		print("Data**************")
 		for line in data:
 			print(line)
+
+		# compute probability of each class
+		self.classProbs = self.computeClassProbs(data)
+		
 
 		# separate the data by class
 		democrat, republican = self.separateByClass(data)
@@ -148,14 +165,22 @@ class NaiveBayes():
 			vote = evidence[i]
 			print("DEMOCRAT: ",self.demProbs[i][vote])
 			dem_final *= self.demProbs[i][vote]
+		
+		dem_final *= self.classProbs['democrat']
 
 		for i in range(16): 
 			vote = evidence[i]
 			print("REPUBLICAN: ",self.repProbs[i][vote])
 			rep_final *= self.repProbs[i][vote]
 
-		results['democrat'] = dem_final
-		results['republican'] = rep_final
+		rep_final *= self.classProbs['republican']
+
+		# normalize the results
+		dem_normal = dem_final / (dem_final + rep_final)
+		rep_normal = rep_final / (dem_final + rep_final)
+
+		results['democrat'] = dem_normal
+		results['republican'] = rep_normal
 		return results
 
 
@@ -163,17 +188,14 @@ def main():
 
 	"""Example usage"""
 	classifier = NaiveBayes()
-	# classifier.train('house-votes-84.data')
-	classifier.train('tiny.data')
-
+	classifier.train('house-votes-84.data')
 	some_dem=['y','y','y','n','y','y','n','n','n','n','y','?','y','y','y','y']
 	dem2=['y','y','y','n','y','y','n','n','n','n','y','n','y','y','y','y']
-
 	some_rep=['n','y','n','y','y','y','n','n','n','y','?','y','y','y','n','y']
+	rep2=['n','y','n','y','y','y','n','n','n','y','y','y','y','y','n','y']
 
 	print(classifier.predict(dem2))
-
-	#print(classifier.predict(some_rep))  
+	print(classifier.predict(rep2))  
 
 
 if __name__ == "__main__":
