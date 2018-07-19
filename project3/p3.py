@@ -87,10 +87,12 @@ class NaiveBayes():
 					num_n += 1
 				else:
 					num_q += 1
-			probs[i]["y"] = num_y/len(data[i])
-			probs[i]["n"] = num_n/len(data[i])
-			probs[i]["?"] = num_q/len(data[i])		
-		 
+
+			# apply add-one laplace smoothing
+			probs[i]["y"] = num_y+1/len(data[i])*1
+			probs[i]["n"] = num_n+1/len(data[i])*1
+			probs[i]["?"] = num_q+1/len(data[i])*1		
+
 		return probs
 		 			
 
@@ -102,33 +104,15 @@ class NaiveBayes():
 			for line in file:
 				data.append(line.strip().split(","))
 
-		print("Data**************")
-		for line in data:
-			print(line)
-
 		# compute probability of each class
 		self.classProbs = self.computeClassProbs(data)
-		
 
 		# separate the data by class
 		democrat, republican = self.separateByClass(data)
-		print("Democrat class***************")
-		for line in democrat:
-			print(line)
-		print("Republican class***************")
-		for line in republican:
-			print(line)
 
 		# separate each class set by attribute	
 		demAttributes = self.separateByAttribute(democrat)
 		repAttributes = self.separateByAttribute(republican)
-
-		print("Democrat attributes***************")
-		for line in demAttributes:
-			print(line)
-		print("Republican attributes***************")
-		for line in repAttributes:
-			print(line) 
 
 		# compute conditional probabilities
 		""" 
@@ -144,33 +128,21 @@ class NaiveBayes():
 	def predict(self, evidence):
 		"""
 		Return map of {'class': probability, ...}, based on 			evidence
-		"""
 
-		print("Democrat probabilities***************")
-		for line in self.demProbs:
-			print(line)
-		print("Republican probabilities***************")
-		for line in self.repProbs:
-			print(line)
-
-		"""
 		To make a prediction, check out the probabilities based on
-		the trained data and get P(x1|c)*P(x2|c)... P(x16|c) for 
-		each class. Then, take the max(d,r).
+		the trained data and get P(x1|c)*P(x2|c)... P(x16|c)*P(c) 			for each class.
 		"""
 		results = {}
 		dem_final = 1
 		rep_final = 1
 		for i in range(16):
 			vote = evidence[i]
-			print("DEMOCRAT: ",self.demProbs[i][vote])
 			dem_final *= self.demProbs[i][vote]
 		
 		dem_final *= self.classProbs['democrat']
 
 		for i in range(16): 
 			vote = evidence[i]
-			print("REPUBLICAN: ",self.repProbs[i][vote])
 			rep_final *= self.repProbs[i][vote]
 
 		rep_final *= self.classProbs['republican']
@@ -190,13 +162,43 @@ def main():
 	classifier = NaiveBayes()
 	classifier.train('house-votes-84.data')
 	some_dem=['y','y','y','n','y','y','n','n','n','n','y','?','y','y','y','y']
-	dem2=['y','y','y','n','y','y','n','n','n','n','y','n','y','y','y','y']
 	some_rep=['n','y','n','y','y','y','n','n','n','y','?','y','y','y','n','y']
-	rep2=['n','y','n','y','y','y','n','n','n','y','y','y','y','y','n','y']
 
+	# secret tests
+	input1 =  ['y','n','y','n','y','n','y','n','y','n','y','n','y','n','y','n']
+	input2 = ['n','n','n','?','?','y','y','n','n','?','?','y','y','y','n','y']
+	intpu3 = ['n','n','n','n','n','n','y','y','y','n','n','n','y','y','n','n']
+
+	dem1 = ['n','?','y','n','n','n','y','y','y','n','n','n','n','n','y','?']
+	rep1 = ['n','n','n','y','y','y','?','n','n','n','n','?','y','y','y','?']
+
+	dem2 = ['n','n','y','n','n','y','y','?','y','y','y','?','n','n','y','?']
+	rep2 = ['n','y','n','y','y','y','n','?','n','n','?','n','?','y','n','?']
+
+	dem3 = ['y','y','?','n','n','?','?','?','?','y','n','?','?','?','?','y']
+	rep3 = ['y','?','?','y','y','?','?','n','?','n','n','y','y','?','n','y']
+
+	print(classifier.predict(some_dem))
+	print(classifier.predict(some_rep))
+
+	print("secret tests")
+
+	print(classifier.predict(input1))
+	print(classifier.predict(input2))
+	print(classifier.predict(intpu3))
+
+	print("\ndemocrat, republican")
+	print(classifier.predict(dem1))
+	print(classifier.predict(rep1))
+
+	print("\ndemocrat, republican")
 	print(classifier.predict(dem2))
-	print(classifier.predict(rep2))  
+	print(classifier.predict(rep2))
 
+	print("\ndemocrat, republican")
+	print(classifier.predict(dem3))
+	print(classifier.predict(rep3))
+	
 
 if __name__ == "__main__":
 	main()
