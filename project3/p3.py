@@ -9,6 +9,11 @@ class NaiveBayes():
 
 	"""TODO: implement Naive Bayes"""
 
+	def __init__(self):
+		self.demProbs = []
+		self.repProbs = []
+
+	
 	def splitDataset(self, dataset, splitRatio):
 		trainSize = int(len(dataset) * splitRatio)
 		trainSet = []
@@ -41,10 +46,40 @@ class NaiveBayes():
 			attributes.append(dict)
 
 		for i in range(len(data)):
-			for v in range(1,16):
-				attributes[v][data[i][v]] += 1
-		return attributes				
+			data[i].pop(0)
+		
+		attributes = [[]]*16
+		for i in range(len(data)):
+			for j in range(16):
+				attributes[j].append(data[i][j])
 
+		attributes = [[sub[i] for sub in data] for i in range(16)]
+		return attributes	
+
+
+	def computeProbabilities(self, data):
+		""" 
+		For each attribute, compute a dictionary of probs with 			values P(y), P(n), and P(?)
+		"""
+		probs = [{}]*16
+		for i in range(len(data)):
+			num_y = 0
+			num_n = 0
+			num_q = 0
+			for j in range(len(data[i])):
+				vote = data[i][j]
+				if vote == "y":
+					num_y += 1
+				elif vote == "n":
+					num_n += 1
+				else:
+					num_q += 1
+			probs[i]["y"] = num_y/len(data[i])
+			probs[i]["n"] = num_n/len(data[i])
+			probs[i]["?"] = num_q/len(data[i])		
+		 
+		return probs
+		 			
 
 	def train(self, datafile):
 
@@ -79,27 +114,13 @@ class NaiveBayes():
 			print(line) 
 
 		# compute conditional probabilities
-
-		
-
-
-
-
-
-
-		
+		""" 
+		Naive bayes uses the frequencies of each attribute
+		relative to it's class to compute conditional probs
+		using laplace smoothing 
 		"""
-		Train a Naive Bayes on the data in datafile.
-
-		datafile will always be a file in the same format as
-		house-votes-84.data, i.e. a comma-seperated values file where
-		the first field is the class and the other 16 fields are 'y',
-		'n' or '?'.
-		
-		train() should estimate the appropriate probabilities from
-		datafile. The conditional probabilities should be estimated
-		with Laplace smoothing (also known as add-one smoothing).
-		"""
+		self.demProbs = self.computeProbabilities(demAttributes)
+		self.repProbs = self.computeProbabilities(repAttributes)
 		pass
 
 
@@ -107,19 +128,51 @@ class NaiveBayes():
 		"""
 		Return map of {'class': probability, ...}, based on 			evidence
 		"""
-		return {'democrat': 0.5, 'republican': 0.5}
+
+		print("Democrat probabilities***************")
+		for line in self.demProbs:
+			print(line)
+		print("Republican probabilities***************")
+		for line in self.repProbs:
+			print(line)
+
+		"""
+		To make a prediction, check out the probabilities based on
+		the trained data and get P(x1|c)*P(x2|c)... P(x16|c) for 
+		each class. Then, take the max(d,r).
+		"""
+		results = {}
+		dem_final = 1
+		rep_final = 1
+		for i in range(16):
+			vote = evidence[i]
+			print("DEMOCRAT: ",self.demProbs[i][vote])
+			dem_final *= self.demProbs[i][vote]
+
+		for i in range(16): 
+			vote = evidence[i]
+			print("REPUBLICAN: ",self.repProbs[i][vote])
+			rep_final *= self.repProbs[i][vote]
+
+		results['democrat'] = dem_final
+		results['republican'] = rep_final
+		return results
 
 
 def main():
-	"""Example usage"""
 
+	"""Example usage"""
 	classifier = NaiveBayes()
 	# classifier.train('house-votes-84.data')
 	classifier.train('tiny.data')
-							#some_dem=['y','y','y','n','y','y','n','n','n','n','y','?','y','y','y','y']
-	#some_rep=['n','y','n','y','y','y','n','n','n','y','?','y','y','y','n','y']
 
-	#print(classifier.predict(some_dem))
+	some_dem=['y','y','y','n','y','y','n','n','n','n','y','?','y','y','y','y']
+	dem2=['y','y','y','n','y','y','n','n','n','n','y','n','y','y','y','y']
+
+	some_rep=['n','y','n','y','y','y','n','n','n','y','?','y','y','y','n','y']
+
+	print(classifier.predict(dem2))
+
 	#print(classifier.predict(some_rep))  
 
 
